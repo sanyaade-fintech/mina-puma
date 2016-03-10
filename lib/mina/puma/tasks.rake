@@ -29,37 +29,32 @@ namespace :puma do
     ]
   end
 
-  desc 'Stop puma'
-  task stop: :environment do
+  def pumactl_command(command)
     queue! %[
       if [ -e '#{pumactl_socket}' ]; then
-        cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -S #{puma_state} stop
-        rm -f '#{pumactl_socket}'
+        if [ -e '#{puma_config}' ]; then
+          cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -F #{puma_config} #{command}
+        else
+          cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -S #{puma_state} --pidfile #{puma_pid} #{command}
+        fi
       else
         echo 'Puma is not running!';
       fi
     ]
+  end
+
+  desc 'Stop puma'
+  task stop: :environment do
+    pumactl_command 'stop'
   end
 
   desc 'Restart puma'
   task restart: :environment do
-    queue! %[
-      if [ -e '#{pumactl_socket}' ]; then
-        cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -S #{puma_state} --pidfile #{puma_pid} restart
-      else
-        echo 'Puma is not running!';
-      fi
-    ]
+    pumactl_command 'restart'
   end
 
   desc 'Restart puma (phased restart)'
   task phased_restart: :environment do
-    queue! %[
-      if [ -e '#{pumactl_socket}' ]; then
-        cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -S #{puma_state} --pidfile #{puma_pid} phased-restart
-      else
-        echo 'Puma is not running!';
-      fi
-    ]
+    pumactl_command 'phased-restart'
   end
 end
