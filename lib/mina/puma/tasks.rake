@@ -46,6 +46,7 @@ namespace :puma do
   desc 'Stop puma'
   task stop: :environment do
     pumactl_command 'stop'
+    queue! %[rm -f '#{pumactl_socket}']
   end
 
   desc 'Restart puma'
